@@ -3,7 +3,8 @@
 /*
  * This file is part of the Symfony package.
  *
- * (c) Fabien Potencier <fabien@symfony.com>
+ * (c) Fabien Potencier <fabien@symfony.com>, Original YAML Component from Symfony
+ * © Ricardo N Felician <FelicianoTech@gmail.com>, YAMLToe fork
  *
  * For the full copyright and license information, please view the LICENSE
  * file that was distributed with this source code.
@@ -18,8 +19,7 @@ use Symfony\Component\Yaml\Exception\ParseException;
  *
  * @author Fabien Potencier <fabien@symfony.com>
  */
-class Parser
-{
+class Parser{
     const BLOCK_SCALAR_HEADER_PATTERN = '(?P<separator>\||>)(?P<modifiers>\+|\-|\d+|\+\d+|\-\d+|\d+\+|\d+\-)?(?P<comments> +#.*)?';
 
     private $offset = 0;
@@ -73,11 +73,6 @@ class Parser
                 continue;
             }
 
-            // tab?
-            if ("\t" === $this->currentLine[0]) {
-                throw new ParseException('A YAML file cannot contain tabs as indentation.', $this->getRealCurrentLineNb() + 1, $this->currentLine);
-            }
-
             $isRef = $mergeNode = false;
             if (preg_match('#^\-((?P<leadspaces>\s+)(?P<value>.+?))?\s*$#u', $this->currentLine, $values)) {
                 if ($context && 'mapping' == $context) {
@@ -91,7 +86,7 @@ class Parser
                 }
 
                 // array
-                if (!isset($values['value']) || '' == trim($values['value'], ' ') || 0 === strpos(ltrim($values['value'], ' '), '#')) {
+                if (!isset($values['value']) || '' == trim($values['value'], ' ') || 0 === strpos(ltrim($values['value'], '\t'), '#')) {
                     $c = $this->getRealCurrentLineNb() + 1;
                     $parser = new self($c);
                     $parser->refs = &$this->refs;
@@ -207,7 +202,7 @@ class Parser
 
                 if ($mergeNode) {
                     // Merge keys
-                } elseif (!isset($values['value']) || '' == trim($values['value'], ' ') || 0 === strpos(ltrim($values['value'], ' '), '#')) {
+                } elseif (!isset($values['value']) || '' == trim($values['value'], ' ') || 0 === strpos(ltrim($values['value'], '\t'), '#')) {
                     // hash
                     // if next line is less indented or equal, then it means that the current value is null
                     if (!$this->isNextLineIndented() && !$this->isNextLineUnIndentedCollection()) {
@@ -321,7 +316,7 @@ class Parser
      */
     private function getCurrentLineIndentation()
     {
-        return strlen($this->currentLine) - strlen(ltrim($this->currentLine, ' '));
+        return strlen($this->currentLine) - strlen(ltrim($this->currentLine, '\t'));
     }
 
     /**
@@ -623,7 +618,7 @@ class Parser
     private function isCurrentLineComment()
     {
         //checking explicitly the first char of the trim is faster than loops or strpos
-        $ltrimmedLine = ltrim($this->currentLine, ' ');
+        $ltrimmedLine = ltrim($this->currentLine, '\t');
 
         return $ltrimmedLine[0] === '#';
     }
@@ -703,8 +698,7 @@ class Parser
      *
      * @return bool Returns true if the string is un-indented collection item, false otherwise
      */
-    private function isStringUnIndentedCollectionItem()
-    {
+    private function isStringUnIndentedCollectionItem(){
         return (0 === strpos($this->currentLine, '- '));
     }
 }
